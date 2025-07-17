@@ -1,21 +1,23 @@
 <?php
-// Arquivo que armazena o total arrecadado
+header("Content-Type: application/json");
+
 $arquivo = 'total.json';
 
-// Lê o JSON atual ou cria se não existir
-$total = file_exists($arquivo) ? json_decode(file_get_contents($arquivo), true) : ["recebido" => 0];
+if (!file_exists($arquivo)) {
+    file_put_contents($arquivo, json_encode(["recebido" => 0]));
+}
 
-// Recebe os dados enviados pelo LivePix
+$dadosAtuais = json_decode(file_get_contents($arquivo), true);
 $entrada = json_decode(file_get_contents("php://input"), true);
 
-// Verifica se tem valor
 if (isset($entrada["valor"])) {
-    $valor = floatval($entrada["valor"]);
-    $total["recebido"] += $valor;
-    file_put_contents($arquivo, json_encode($total));
-    http_response_code(200);
-    echo "OK";
+    $valorRecebido = floatval($entrada["valor"]);
+    $dadosAtuais["recebido"] += $valorRecebido;
+
+    file_put_contents($arquivo, json_encode($dadosAtuais, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+    echo json_encode(["status" => "sucesso", "novo_total" => $dadosAtuais["recebido"]]);
 } else {
     http_response_code(400);
-    echo "Dados inválidos";
+    echo json_encode(["erro" => "valor ausente ou inválido"]);
 }
